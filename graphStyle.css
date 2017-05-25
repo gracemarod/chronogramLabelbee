@@ -1,0 +1,27 @@
+/*Style taken from http://dk8996.github.io/Gantt-Chart/*/
+
+var taskStatus = {
+    "SUCCEEDED": "bar",
+    "FAILED": "bar-failed",
+    "RUNNING": "bar-running",
+    "KILLED": "bar-killed"
+};
+  .bar {
+      fill: #33b5e5;
+  }
+
+  .bar-failed {
+    fill: #CC0000;
+  }
+
+  .bar-running {
+      fill: #669900;
+  }
+
+  .bar-succeeded {
+    fill: #33b5e5;
+  }
+
+  .bar-killed {
+      fill: #ffbb33;
+  }

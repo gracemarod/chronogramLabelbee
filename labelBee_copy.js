@@ -1,27 +1,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Global variables
 var canvas, canvas1, canvas2, ctx, ctx2, vid, play, vidTimer, radius = 5,
-    dragging = false,
-    time, final_id = 0;
+dragging = false,
+time, final_id = 0;
 bee = [0, 0]; //Global array that stores the value of x, y
 g_activities = ["fanning", "pollenating", "entering", "exiting"]; //global string array of activities
 var x, y, cx, cy, width, height, id, default_id = 0,
-    marked, permanent, activities = [],
-    bool_acts = [],
-    is_marked = false,
-    is_permanent = false;
+marked, permanent, activities = [],
+bool_acts = [],
+is_marked = false,
+is_permanent = false;
 var form_acts = [],
-    fanning, pollenating, entering, leaving, old, newB, is_old = false,
-    currentFrame, video, video2, Cframe = 0;
+fanning, pollenating, entering, leaving, old, newB, is_old = false,
+currentFrame, video, video2, Cframe = 0;
 var Tracks = new Array(),
-    temporaryObs = new Observation(0),
-    chronogramData = new Array(),
-    chronoObs = new chronoObservation();
+temporaryObs = new Observation(0),
+chronogramData = new Array(),
+chronoObs = new chronoObservation();
 var buttonManip, undo = new Observation(0),
-    alert1, transformFactor = 1.0;
+alert1, transformFactor = 1.0;
 var vis, xAxis, yAxis, circles;
 var g_Moving = false,
-    g_Dragging = false;
+g_Dragging = false;
 var fps;
 var videoinfo;
 var selectedBee = undefined
@@ -102,7 +102,7 @@ function init() {
     $("#canvasresize").resizable({
       helper: "ui-resizable-helper",
       aspectRatio: 1   // Need to put a value even to update it later
-    });
+  });
     $("#canvasresize").on( "resizestop", refreshCanvasSize );
 
     // Do not trigger first refresh: onloadeddata will call it
@@ -134,91 +134,91 @@ function saveToFile() {
     a.click();
     console.log("savetoFile: waiting for user to save to file")
         //window.URL.revokeObjectURL(url);
-    console.log("savetoFile: done")
-}
+        console.log("savetoFile: done")
+    }
 
-function tracksToCSV(Tracks) {
-    var csv = "Date,Time (frame),ID,Action,Cargo,Shift\n"
-    if (Tracks == undefined) return csv
-    for (F in Tracks)
-        for (id in Tracks[F]) {
-            var obs = Tracks[F][id]
-            var action = "",
-                cargo = ""
-            var conc = function(s1, s2) {
-                if (s2 === "") s1 += s2;
-                else s1 += ";" + s2
+    function tracksToCSV(Tracks) {
+        var csv = "Date,Time (frame),ID,Action,Cargo,Shift\n"
+        if (Tracks == undefined) return csv
+            for (F in Tracks)
+                for (id in Tracks[F]) {
+                    var obs = Tracks[F][id]
+                    var action = "",
+                    cargo = ""
+                    var conc = function(s1, s2) {
+                        if (s2 === "") s1 += s2;
+                        else s1 += ";" + s2
+                    }
+                    if (obs.bool_acts[0]) action += (action === "" ? "" : ";") + "fanning"
+                    if (obs.bool_acts[2]) action += (action === "" ? "" : ";") + "came in"
+                    if (obs.bool_acts[3]) action += (action === "" ? "" : ";") + "went out"
+
+                    if (obs.bool_acts[1]) cargo += "pollen"
+                        csv += "nodate," + F + "," + obs.ID + "," + action + "," + cargo + ",\n"
+                }
+                return csv
             }
-            if (obs.bool_acts[0]) action += (action === "" ? "" : ";") + "fanning"
-            if (obs.bool_acts[2]) action += (action === "" ? "" : ";") + "came in"
-            if (obs.bool_acts[3]) action += (action === "" ? "" : ";") + "went out"
 
-            if (obs.bool_acts[1]) cargo += "pollen"
-            csv += "nodate," + F + "," + obs.ID + "," + action + "," + cargo + ",\n"
-        }
-    return csv
-}
+            function saveToCSV() {
+                console.log("savetoFile: exporting to CSV...")
 
-function saveToCSV() {
-    console.log("savetoFile: exporting to CSV...")
+                var txt = tracksToCSV(Tracks);
+                var filename = "Tracks.csv";
 
-    var txt = tracksToCSV(Tracks);
-    var filename = "Tracks.csv";
-
-    var blob = new Blob([txt], {
-        type: "text/csv"
-    });
-    var url = window.URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.hidden = true;
-    document.body.appendChild(a);
-    a.href = url;
-    a.download = filename;
-    a.click();
-    console.log("savetoFile: waiting for user to save to file")
+                var blob = new Blob([txt], {
+                    type: "text/csv"
+                });
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement("a");
+                a.hidden = true;
+                document.body.appendChild(a);
+                a.href = url;
+                a.download = filename;
+                a.click();
+                console.log("savetoFile: waiting for user to save to file")
         //window.URL.revokeObjectURL(url);
-    console.log("savetoFile: done")
-}
+        console.log("savetoFile: done")
+    }
 
-function tracksToBBoxes(Tracks) {
-    var csv = "#frame,left,top,right,bottom,pollen,arrive,leave,fanning\n"
-    if (Tracks == undefined) return csv
-    for (F in Tracks)
-        for (id in Tracks[F]) {
-            var obs = Tracks[F][id]
-            
-            csv += (F + "," + obs.x + "," + obs.y 
+    function tracksToBBoxes(Tracks) {
+        var csv = "#frame,left,top,right,bottom,pollen,arrive,leave,fanning\n"
+        if (Tracks == undefined) return csv
+            for (F in Tracks)
+                for (id in Tracks[F]) {
+                    var obs = Tracks[F][id]
+
+                    csv += (F + "," + obs.x + "," + obs.y 
                      + "," + (obs.x+obs.width) + "," + (obs.y+obs.height) 
                      + "," + Number(obs.bool_acts[1])  // pollen
                      + "," + Number(obs.bool_acts[2])  // arrive
                      + "," + Number(obs.bool_acts[3])  // leave
                      + "," + Number(obs.bool_acts[0])  // fanning
                      + "\n")
-        }
-    return csv
-}
+                }
+                return csv
+            }
 
-function saveToBBoxes() {
-    console.log("saveToBBoxes: exporting bounding boxes to CSV...")
-    console.log("with simple format: frame, left, top, right, bottom, pollen")
+            function saveToBBoxes() {
+                console.log("saveToBBoxes: exporting bounding boxes to CSV...")
+                console.log("with simple format: frame, left, top, right, bottom, pollen")
 
-    var txt = tracksToBBoxes(Tracks);
-    var filename = "BBoxes.csv";
+                var txt = tracksToBBoxes(Tracks);
+                var filename = "BBoxes.csv";
 
-    var blob = new Blob([txt], {
-        type: "text/csv"
-    });
-    var url = window.URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.hidden = true;
-    document.body.appendChild(a);
-    a.href = url;
-    a.download = filename;
-    a.click();
-    console.log("saveToBBoxes: waiting for user to save to file")
+                var blob = new Blob([txt], {
+                    type: "text/csv"
+                });
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement("a");
+                a.hidden = true;
+                document.body.appendChild(a);
+                a.href = url;
+                a.download = filename;
+                a.click();
+                console.log("saveToBBoxes: waiting for user to save to file")
         //window.URL.revokeObjectURL(url);
-    console.log("saveToBBoxes: done")
-}
+        console.log("saveToBBoxes: done")
+    }
 
 //Reading from json
 function onReaderLoad(event) {
@@ -268,23 +268,23 @@ function onKeyDown(e) {
             break;
             */
         case 32: // Space
-            if (e.ctrlKey) {
-                if (e.shiftKey)
-                    playPauseVideoBackward(2);
-                else
-                    playPauseVideo(2);
-            } else {
-                if (e.shiftKey)
-                    playPauseVideoBackward();
-                else
-                    playPauseVideo();
-            }
-            return false;
+        if (e.ctrlKey) {
+            if (e.shiftKey)
+                playPauseVideoBackward(2);
+            else
+                playPauseVideo(2);
+        } else {
+            if (e.shiftKey)
+                playPauseVideoBackward();
+            else
+                playPauseVideo();
+        }
+        return false;
         case 27: // Escape
-            return true;
-            var id_field = document.getElementById("I");
-            if ($(id_field).is(':focus')) {
-                id_field.selectionStart = id_field.selectionEnd
+        return true;
+        var id_field = document.getElementById("I");
+        if ($(id_field).is(':focus')) {
+            id_field.selectionStart = id_field.selectionEnd
                 id_field.blur(); // Facilitate changing the id
                 return false;
             } else {
@@ -294,9 +294,9 @@ function onKeyDown(e) {
             }
             break;
         case 83: // key S
-            submit_bee();
-            if (logging.keyEvents)
-                console.log("onKeyDown: 'S' bound to submit_bee. Prevented key 'S' to propagate to textfield.")
+        submit_bee();
+        if (logging.keyEvents)
+            console.log("onKeyDown: 'S' bound to submit_bee. Prevented key 'S' to propagate to textfield.")
             return false; // Prevent using S in textfield
         case 13: // Enter
             onKeyDown_IDEdit(e) // Forward to IDedit keydown handler
@@ -309,68 +309,68 @@ function onKeyDown(e) {
         case 20: // Caps Lock
         case 35: // End
         case 36: // Home
-            break;
+        break;
         case 188: // <
-            if (e.ctrlKey && e.shiftKey)
-                rewind4();
-            else if (e.ctrlKey)
-                rewind3();
-            else if (e.shiftKey)
-                rewind2();
-            else
-                rewind();
-            return false;
+        if (e.ctrlKey && e.shiftKey)
+            rewind4();
+        else if (e.ctrlKey)
+            rewind3();
+        else if (e.shiftKey)
+            rewind2();
+        else
+            rewind();
+        return false;
         case 190: // >
-            if (e.ctrlKey && e.shiftKey)
-                forward4();
-            else if (e.ctrlKey)
-                forward3();
-            if (e.shiftKey)
-                forward2();
-            else
-                forward();
-            return false;
+        if (e.ctrlKey && e.shiftKey)
+            forward4();
+        else if (e.ctrlKey)
+            forward3();
+        if (e.shiftKey)
+            forward2();
+        else
+            forward();
+        return false;
             // Mac CMD Key
         case 91: // Safari, Chrome
         case 93: // Safari, Chrome
         case 224: // Firefox
-            break;
+        break;
     }
     let obj = canvas1.getActiveObject();
     if (obj) {
         switch (e.keyCode) {
             case 37: // Left
-                if (e.shiftKey && obj.width > 10) {
-                    obj.width -= 10;
-                    obj.left += 5;
-                } else
-                    obj.left -= 10;
-                obj.setCoords();
-                refresh();
-                return false;
+            if (e.shiftKey && obj.width > 10) {
+                obj.width -= 10;
+                obj.left += 5;
+            } else
+            obj.left -= 10;
+            obj.setCoords();
+            refresh();
+            return false;
             case 39: // Right
-                if (e.ctrlKey) {
-                    obj.set("width", parseFloat(obj.get("width")) + 10)
-                    obj.set("left", parseFloat(obj.get("left")) - 5)
-                } else
-                    obj.set("left", parseFloat(obj.get("left")) + 10)
-                obj.setCoords();
-                refresh();
-                return false;
+            if (e.ctrlKey) {
+                obj.set("width", parseFloat(obj.get("width")) + 10)
+                obj.set("left", parseFloat(obj.get("left")) - 5)
+            } else
+            obj.set("left", parseFloat(obj.get("left")) + 10)
+            obj.setCoords();
+            refresh();
+            return false;
             case 38: // Up
-                if (e.ctrlKey) {
-                    obj.set("height", parseFloat(obj.get("width")) + 10)
-                    obj.set("top", parseFloat(obj.get("top")) - 5)
-                } else
-                    obj.set("top", parseFloat(obj.get("top")) - 10)
-                obj.setCoords();
-                refresh();
-                return false;
+            if (e.ctrlKey) {
+                obj.set("height", parseFloat(obj.get("width")) + 10)
+                obj.set("top", parseFloat(obj.get("top")) - 5)
+            } else
+            obj.set("top", parseFloat(obj.get("top")) - 10)
+            obj.setCoords();
+            refresh();
+            return false;
             case 40: // Down
-                obj.set("top", parseFloat(obj.get("top")) + 10)
-                obj.setCoords();
-                refresh();
-                return false;
+            obj.set("top", parseFloat(obj.get("top")) + 10)
+            obj.setCoords();
+            refresh();
+            return false;
         }
     }
     if (e.keyCode >= 48 && e.keyCode <= 57) { // Numbers from 0 to 9
@@ -404,7 +404,7 @@ function refreshCanvasSize(event, ui) {
     
     let wd = parseInt($("#canvasresize")[0].style.width)-16 // Assume width is in px
     let hd = video.videoHeight/video.videoWidth*wd
-        
+
     resizeCanvas(wd,hd)
     
     transformFactor = video.videoWidth / canvas.width;
@@ -422,7 +422,7 @@ function refreshCanvasSize(event, ui) {
     
     ctx=canvas1.getContext("2d");
     ctx.transform(s,0,0,s,tx,ty);
-        
+
     onFrameChanged()
 }
 
@@ -455,7 +455,7 @@ function onVideoLoaded(event) {
     $("#canvasresize").resizable({
       helper: "ui-resizable-helper",
       aspectRatio: w / h
-    });
+  });
     //resizeCanvasDisplay(wd,hd)
     //resizeCanvas(wd,hd)
     refreshCanvasSize()
@@ -612,33 +612,33 @@ function plotTracks(ctx) {
         }
         for (let f=fmin; f<=fmax; f++) {
             if (f==F) continue;
-        
+
             let obs = getObsHandle(f, id, false)
             if (!obs) continue;
             let rect = videoToCanvasCoords(obs)
             
             let x = rect.left + rect.width / 2;
             let y = rect.top + rect.height / 2;
-    
+
 //             if (f-F<0)
 //                 color = "red"
 //             else
 //                 color = "green"
-            color = setColor(f);
-                
-            radius = 3;
-            paintDot(ctx, {'x':x, 'y':y}, radius, color, id)    
-                
-            let acti = activityString(obs)
+color = setColor(f);
 
-            ctx.font = "8px Arial";
-            ctx.fillStyle = color;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillText(acti, x, y + radius + 3);
-            ctx.textBaseline = 'alphabetic';    
-        }
-    }
+radius = 3;
+paintDot(ctx, {'x':x, 'y':y}, radius, color, id)    
+
+let acti = activityString(obs)
+
+ctx.font = "8px Arial";
+ctx.fillStyle = color;
+ctx.textAlign = 'center';
+ctx.textBaseline = 'top';
+ctx.fillText(acti, x, y + radius + 3);
+ctx.textBaseline = 'alphabetic';    
+}
+}
 }
 function paintDot(ctx, pt, radius, color, id) {
     let x=pt.x, y=pt.y;
@@ -658,11 +658,11 @@ function paintDot(ctx, pt, radius, color, id) {
 function activityString(obs) {
     let acti = ''
     if (obs.bool_acts[0]) acti += 'F'
-    if (obs.bool_acts[1]) acti += 'P'
-    if (obs.bool_acts[2]) acti += 'E'
-    if (obs.bool_acts[3]) acti += 'L'
-    return acti;
-}
+        if (obs.bool_acts[1]) acti += 'P'
+            if (obs.bool_acts[2]) acti += 'E'
+                if (obs.bool_acts[3]) acti += 'L'
+                    return acti;
+            }
 
 function identify(ctx, rect, radius) { // old prototype: obs, x,y, color){
     var color
@@ -835,7 +835,7 @@ function addRectInteractive(id, startX, startY) {
             //rect.set('width', e.offsetX - topleft.x);
             //rect.set('height', e.offsetY - topleft.y);
             let w = (e.offsetX - center.x) * 2,
-                h = (e.offsetY - center.y) * 2;
+            h = (e.offsetY - center.y) * 2;
             rect.set({
                 width: w,
                 height: h,
@@ -844,7 +844,7 @@ function addRectInteractive(id, startX, startY) {
             });
         } else {
             let w = (e.offsetX - topleft.x),
-                h = (e.offsetY - topleft.y);
+            h = (e.offsetY - topleft.y);
             rect.set({
                 width: w,
                 height: h,
@@ -991,13 +991,13 @@ function predictId(frame, rect, mode) {
         } else if (mode == "pointinside") {
             // Check if center of rect is inside obs
             if ((rect.x >= obs.x) && (rect.x <= obs.x + obs.width) && (rect.y >= obs.y) && (rect.y <= obs
-                    .y + obs.height)) {
+                .y + obs.height)) {
                 return true
-            }
-        } else if (mode == "pointinside") {
+        }
+    } else if (mode == "pointinside") {
             // Check if center of rect is inside obs
             var cx = rect.x + 0.5 * w,
-                cy = rect.y + 0.5 * h;
+            cy = rect.y + 0.5 * h;
             if ((cx >= obs.x) && (cx <= obs.x + obs.width) && (cy >= obs.y) && (cy <= obs.y + obs.height)) {
                 return true
             }
@@ -1020,15 +1020,15 @@ function predictId(frame, rect, mode) {
                         predicted_obs: obs,
                         reason: 'conflict'
                     };
-                else
-                    return {
-                        id: id,
-                        obs: obs
-                    };
+                    else
+                        return {
+                            id: id,
+                            obs: obs
+                        };
+                    }
+                }
             }
-        }
-    }
-    var ids = getValidIDsForFrame(frame + 1);
+            var ids = getValidIDsForFrame(frame + 1);
     //console.log("ids=",ids)
     for (let id of ids) {
         var obs = getObsHandle(frame + 1, id, false);
@@ -1041,30 +1041,30 @@ function predictId(frame, rect, mode) {
                     predicted_obs: obs,
                     reason: 'conflict'
                 };
-            else
-                return {
-                    id: id,
-                    obs: obs
-                };
+                else
+                    return {
+                        id: id,
+                        obs: obs
+                    };
+                }
+            }
+            return {
+                id: default_id,
+                reason: 'default'
+            };
         }
-    }
-    return {
-        id: default_id,
-        reason: 'default'
-    };
-}
 
-function onMouseDown2(ev) {
-   if (ev.ctrlKey) {
-      console.log("onMouseDown2",ev);
-      
+        function onMouseDown2(ev) {
+           if (ev.ctrlKey) {
+              console.log("onMouseDown2",ev);
+
 //      canvasTform[1] = 
-      
-      ev.preventDefault();
-      return false;
-   }
-   console.log("onMouseDown2");
-   return true;
+
+ev.preventDefault();
+return false;
+}
+console.log("onMouseDown2");
+return true;
 }
 
 function onMouseDown(option) {
@@ -1086,8 +1086,8 @@ function onMouseDown(option) {
         if (logging.mouseEvents)
             console.log("onMouseDown: Clicked on object ", option.target)
             // This is now handled by event onObjectSelected()
-        return false;
-    } else {
+            return false;
+        } else {
         // Clicked on the background
         if (logging.addRect)
             console.log('onMouseDown: no object selected', option)
@@ -1095,7 +1095,7 @@ function onMouseDown(option) {
         canvas1.deactivateAllWithDispatch()
 
         var startY = option.e.offsetY,
-            startX = option.e.offsetX;
+        startX = option.e.offsetX;
         let videoXY = canvasToVideoCoords({
             left: startX,
             top: startY
@@ -1120,7 +1120,7 @@ function onMouseDown(option) {
                 // addRect takes canvas coordinates units
                 let r = videoToCanvasCoords(obs)
                 let width = r.width,
-                    height = r.height
+                height = r.height
                 rect = addRect(prediction.id, startX - width / 2, startY - height / 2, width, height, "new");
                 rect.obs.bool_acts[0] = obs.bool_acts[0]; // Copy fanning flag
                 rect.obs.bool_acts[1] = obs.bool_acts[1]; // Copy pollen flag
@@ -1198,24 +1198,24 @@ function onMouseUp(option) {
         console.log('onMouseUp: option=', option)
         //canvas1.off('mouse:move'); // See onMouseUp_Dragging
         // All moving stuff handled now by event onObjectModified() and onMouseUp_Dragging()
-}
-
-function onObjectSelected(option) {
-    console.log("onObjectSelected", option)
-        //var activeObject = canvas1.getActiveObject();
-    if (option.target.id != undefined) {
-        console.log("Current object id=", option.target.id)
-        console.log("ActiveObject id=", canvas1.getActiveObject().id)
-        selectBee(option.target)
     }
-}
 
-function onObjectDeselected(option) {
-   if (logging.selectionEvent)
-       console.log("onObjectDeselected: ", option);
-}
+    function onObjectSelected(option) {
+        console.log("onObjectSelected", option)
+        //var activeObject = canvas1.getActiveObject();
+        if (option.target.id != undefined) {
+            console.log("Current object id=", option.target.id)
+            console.log("ActiveObject id=", canvas1.getActiveObject().id)
+            selectBee(option.target)
+        }
+    }
 
-function onObjectMoving(option) {
+    function onObjectDeselected(option) {
+       if (logging.selectionEvent)
+           console.log("onObjectDeselected: ", option);
+   }
+
+   function onObjectMoving(option) {
     return; // No real need for Moving, we can update everything once at the end in onObjectModified
 
     // Called during translation only
@@ -1379,11 +1379,11 @@ function showZoom(rect) {
     var zoom_ctx = zoom_canvas.getContext('2d');
     zoom_ctx.clearRect(0, 0, 200, 150)
     let w = rect.width,
-        h = rect.height
+    h = rect.height
     let mw = w * 0.5,
-        mh = h * 0.5
+    mh = h * 0.5
     let w2 = w + 2 * mw,
-        h2 = h + 2 * mh
+    h2 = h + 2 * mh
     let sc = Math.min(5, 200 / w2)
     zoom_ctx.drawImage(video, (rect.left - mw) * transformFactor, (rect.top - mh) * transformFactor, w2 *
         transformFactor, h2 * transformFactor,
@@ -1412,12 +1412,12 @@ function selectBeeByID(id) {
 //This function is needed to update the display when a different bee is selected
 //in the GUI
 //function selectBee(beeId) {
-function selectBee(rect) {
-    if (logging.selectionEvents)
-        console.log("selectBee: rect=", rect);
-    let beeId = rect.id;
-    
-    selectedBee = beeId;
+    function selectBee(rect) {
+        if (logging.selectionEvents)
+            console.log("selectBee: rect=", rect);
+        let beeId = rect.id;
+
+        selectedBee = beeId;
 
     // Update form from rect
     updateForm(rect)
@@ -1444,7 +1444,7 @@ function selectBee(rect) {
 function deleteObjects() { //Deletes selected rectangle(s) when remove bee is pressed
     //Deletes an observation
     var activeObject = canvas1.getActiveObject(),
-        activeGroup = canvas1.getActiveGroup();
+    activeGroup = canvas1.getActiveGroup();
 
     if (activeObject) {
         canvas1.remove(activeObject);
@@ -1566,8 +1566,8 @@ function chronoObservation() {
 // }
 
 //function grabIDEditInfoCallChange(event) {
-function onKeyDown_IDEdit(event) {
-    var key = event.which || event.keyCode;
+    function onKeyDown_IDEdit(event) {
+        var key = event.which || event.keyCode;
     if (key == 13) { // Enter
         let alert1 = document.getElementById("alert");
         let frame = getCurrentFrame()
@@ -1793,7 +1793,7 @@ var idSets = new Set();
 // singleCircles has all the id's that appear only once on the data.
 // pairRect has the id that appear more than once.
 var valuesMap = new Set(), singleCircles = {},
-               pairRect = {};
+pairRect = {};
 
 
 var coordsList = [];
@@ -1818,96 +1818,137 @@ function createChronoData(){
                 chronoObs.Activity = "exiting";
             }
             chronogramData.push(chronoObs);
-            }
         }
-        return chronogramData
+    }
+    return chronogramData
         // console.log("Data: ", chronogramData)
-}
+    }
+//temporary object for beeID's(y) and it's x values
+var  tempCoordinates = {}
+//Final intervals and its BeeID
+allIntervals = []
 
-var cirList = []
-var singleCir = {
-    x:0,
-    y:0
-}
-
-var intervals = []
-var tempInterval = {
+//For current interval
+var tempInterval ={
     x1:0,
     x2:0,
     y:0
 }
-                //Make scatter plot graph
-function drawChrono() { 
-    createChronoData();
-// console.log("Data 2: ", chronogramData)
-    var w = 800,
-        h = 500;
-    var margin = {top: 30,
-        right: 40,
-        bottom:30,
-        left:40 },
 
-        width = w-margin.left -margin.right,
-        height= h - margin.top -margin.bottom;
+function createIntervalList(){
+    tempCoordinates = {}
+
+    for (var i =0; i < chronogramData.length; i++){  
+      if(chronogramData[i].y in  tempCoordinates){  //Make sure y coordinate is not in tempCoordiantes
+          tempCoordinates[chronogramData[i].y].push(chronogramData[i].x);       
+    }else{          //Create new beeId key with it's x coordiantes as value
+    tempCoordinates[chronogramData[i].y] = []
+    tempCoordinates[chronogramData[i].y].push(chronogramData[i].x);
+    }
+    }
+
+allIntervals = []
+// var tempInterval ={
+//     x1:0,
+//     x2:0,
+//     y:0
+// }
+
+for (var key in tempCoordinates){
+
+    let xValues = tempCoordinates[key]
+    let tempInterval = {x1: xValues[0], x2: xValues[0],y : key }
+    
+
+    for (var i = 1; i < xValues.length; i++){ 
+        if(xValues[i] - xValues[i-1]==1) {     
+             tempInterval.x2 = xValues[i]    //Extend the existing interval
+        }
+        else {
+           allIntervals.push(tempInterval) 
+           tempInterval = {x1: xValues[i], x2: xValues[i],y : key }    // New interval
+        }  
+    }
+    allIntervals.push(tempInterval)
+    // tempInterval = {x1: xValues[i], x2: xValues[i],y : key } 
+} 
+//allIntervals.push(tempInterval) 
+
+return allIntervals
+
+}
+
+
+
+// var intervals = []
+// var tempInterval = {
+//     x1:0,
+//     x2:0,
+//     y:0
+// }
+
+// var sortedCoords ={
+//     y :0,
+//     x:[]
+// }
+                //Make scatter plot graph
+                function drawChrono() { 
+                    createChronoData();
+// console.log("Data 2: ", chronogramData)
+var w = 800,
+h = 500;
+var margin = {top: 30,
+    right: 40,
+    bottom:30,
+    left:40 },
+
+    width = w-margin.left -margin.right,
+    height= h - margin.top -margin.bottom;
 
 
     var padding = 30; //for chart edges
     
-
-    // for (i in chronogramData.length){
-    //     idSets.add(chronogramData[i].y)
-    // }
     //Create scale functions
-     xScale = d3.scale.linear()
-        .range([0, width])
-        .domain([0,
-            d3.max(chronogramData,
-                function(d) {
-                    return Number(d.x);})
+    xScale = d3.scale.linear()
+    .range([0, width])
+    .domain([0,
+        d3.max(chronogramData,
+            function(d) {
+                return Number(d.x);})
         ]);
 
-     yScale = d3.scale.linear()
-        .range([height , 0])
-        .domain([0,
-            d3.max(chronogramData,
-                function(d) {
-                    return Number(d.y);
-                })
-        ]);
-
-     // yScale = d3.scale.ordinal()
-        // .domain(chronogramData,function(d){return Number(d.y)})
-        // .rangeBands([height , 0]);
+     yScale = d3.scale.ordinal()
+     .domain(chronogramData,function(d){return Number(d.y)})
+     .rangeRoundBands([0, height - margin.top -margin.bottom],.1);
     //draw the x axis
-     xAxis = d3.svg.axis()
-        .scale(xScale)
-        .orient('bottom')
-        .ticks(5)
-        .tickSize(-height); 
+    xAxis = d3.svg.axis()
+    .scale(xScale)
+    .orient('bottom')
+    .ticks(5)
+    .tickSize(-height); 
 
     //draw the y axis 
-     yAxis = d3.svg.axis()
-        .scale(yScale)
-        .orient('left')
-        .ticks(5)
-        // .tickFormat(d3.format("d"))
-        .tickSize(-width);
+    yAxis = d3.svg.axis()
+    .scale(yScale)
+    .orient('left')
+    .ticks(5)
+    .tickSize(-width);
 
-        
+
     //Create svg element
         //Create svg element
-    svg = d3.select('#svgVisualize')
+        svg = d3.select('#svgVisualize')
         // .attr("id", "chart")
         .attr('width',w )
         .attr('height', h);
 
-    chart = svg.append("g")
+        chart = svg.append("g")
         .classed("display",true)
         .attr("transform","translate(" +margin.left + ","+margin.top +")");
-    
+
     //add to X axis
     chart.append('g')
-        .classed("x axis", true)
+    .classed("x axis", true)
         // .attr('class', 'x axis')
         .attr("transform", "translate(" + 0 + "," + height + ")")
         .call(xAxis);
@@ -1915,121 +1956,75 @@ function drawChrono() {
 
     //chart to Y axis
     chart.append('g')
-        .attr('class', 'y axis')
-        .attr("transform", "translate(0,0)")
-        .call(yAxis);
+    .attr('class', 'y axis')
+    .attr("transform", "translate(0,0)")
+    .call(yAxis);
 
 
     //add to X axis
     chart.select(".x.axis")
-        .append("text")
-        .attr("x",0)
-        .attr("y",0)
-        .attr("transform", "translate(0,15)" )
-        .text("Frames");
+    .append("text")
+    .attr("x",0)
+    .attr("y",0)
+    .attr("transform", "translate(0,15)" )
+    .text("Frames");
 
     //add to Y axis
     chart.select(".y.axis")
-        .append("text")
-        .attr("x",0)
-        .attr("y",0)
-        .attr("transform", "translate(-5," + height +") rotate(-90)")
-        .text("Bee ID");
-    
-    //Update Data every 5 seconds
-    // updateData();
-    //On click, update with new data
-    // d3.select("h4")
-    //   .on("click",function(){
-    // var inter = setInterval(function(){
-    //     updateData();
-    // },5000);
+    .append("text")
+    .attr("x",0)
+    .attr("y",0)
+    .attr("transform", "translate(-5," + height +") rotate(-90)")
+    .text("Bee ID");
+
 
 }
 var circleList = [];
+var sortedCoordsList = [];
 function updateData(){
-  
-    createChronoData();  
-      
-      // circleList = [];
-      //Setting the set object for the y scale
-      // valuesMap = new Set()  //, pairRect = {}, singleCircles = {};
-      // chronogramData.forEach(function(d) {valuesMap.add(Number(d.y)) });
-      
-      // chronogramData.forEach(function(d) { 
-      // if(valuesMap[d.y] > 1){
-      //   pairRect[d.y] = valuesMap[d.y]}
-      // else
-      //   singleCircles[d.y] = valuesMap[d.y]});
-      
-      coordsList = []  
-      chronogramData.forEach(function(d){coordsList.push(Number(d.x));}); 
 
-     var intervals = []
-    var tempInterval = {
+    createChronoData();  
+    intervals = []
+    tempInterval = {
         x1:0,
         x2:0,
         y:0
     }
-    var temp = 0
-    tempInterval.x1 = coordsList[0]
-    tempInterval.x2 = coordsList[0]
-    for (var i = 0; i < coordsList.length-1; i++){
-       
-        if(coordsList[i+1] - coordsList[i]==1){
-             tempInterval.x2 = coordsList[i+1]
-             console.log("here")
 
-    }
-         else {
-           intervals.push(tempInterval)         
-           tempInterval.x1 = coordsList[i]
-           tempInterval.x2 = coordsList[i]  
-             }
-        tempInterval = {x1:0, x2:0,y:0}
-
-    } 
-     
-    
+    createIntervalList();
+    //sorted by y coordinate
 
       //Update scale domain
 
       xScale.domain([0, d3.max(chronogramData, function(d) {
-                return Number(d.x) ;})])
-      // yScale.domain(chronogramData.map(function(d){return Number(d.y);}))
-      //   ;
-      // yScale.domain(new Set(chronogramData,function(d){return Number(d.y);}))
-      yScale.domain([0,d3.max(chronogramData,
-            function(d) {
-                return Number(d.y);
-            })]);
+        return Number(d.x) ;})])
+
+      allIds = new Set()
+      for (let d of chronogramData) {
+        allIds.add(d.y)
+      }
+
+      yScale.domain([...allIds].sort())
 
 
-        //Create circle
-        // chart.selectAll("circle")
-        // .data(chronogramData)
-        // .enter()
-        // .append("circle")  //Add circle chart
-        // .attr("cx", function(d) {return xScale(Number(d.x));})
-        // .attr("cy", function(d) {return yScale(Number(d.y));})
-        // .attr("r",5);
-        // .attr("height",  function(d) { return (y(Number(d.y))+10 - y(Number(d.y)));})
-        // .attr("width", function(d) {return (x(Number(d.x)+0.3) - x(d.x));})
-        // .attr("r",2);
 
-    chart.selectAll("circle")
-        .data(chronogramData)
-        .enter()
+//Circles for solo bee iD
+chart.selectAll("circle")
+.data(allIntervals)
+.enter()
         .append("circle")  //Add circle chart
-        .attr("cx", function(d) {return xScale(Number(d.x));})
-        .attr("cy", function(d) {return yScale(Number(d.y));})
+        .attr("cx", function(d) {if(d.x1 == d.x2)
+            return xScale(Number(d.x1));})
+        .attr("cy", function(d) {if(d.x1 == d.x2){
+            return yScale(Number(d.y))+yScale.rangeBand()/2};})
         .attr("r",5);
 
       //Update circles
       chart.selectAll("circle")
-           .attr("cx",function(d) {return xScale(Number(d.x));})
-           .attr("cy",function(d) {return yScale(Number(d.y));})
-           .style("stroke", "black")
+      .attr("cx",function(d) {if(d.x1 == d.x2){return xScale(Number(d.x1))};})
+      .attr("cy",function(d) {if(d.x1 == d.x2){
+        return yScale(Number(d.y))+yScale.rangeBand()/2};})
+      .style("stroke", "black")
            .attr("fill", "black")   //change color
            .attr("r",5)   //shange radius
            .style("fill", function(d) {
@@ -2043,25 +2038,49 @@ function updateData(){
             else if (d.Activity == "exiting")
                 color = "#00CC99";
             return color;
-            });
-         // }); //end animation 
+        });
+
+    //Display intervals within the same Bee ID
+    chart.selectAll("rect")
+        .data(allIntervals)
+        .enter()
+        .insert("rect");  
+ 
+    //Update rect
+    chart.selectAll("rect")
+        .attr("x",function(d) {
+            if(d.x1 != d.x2)
+                return xScale(Number(d.x1));})
+        .attr("y",function(d) {
+            if(d.x1 != d.x2)
+                return yScale(Number(d.y));})
+        .attr("height", function(d){
+            if(d.x1 != d.x2)
+                return yScale.rangeBand()})
+        .attr("width",function(d){
+            if(d.x1 != d.x2)
+                return xScale(Number(d.x2)) - xScale(d.x1)  } )
+        .style("stroke", "black")
+        .attr("fill", "black");
+
 
     //Update X axis
     chart.select(".x.axis")
-        .transition()
-        .duration(1000)
-        .call(xAxis)
+    .transition()
+    .duration(1000)
+    .call(xAxis)
 
     //Update y axis
-     chart.select(".y.axis")
-        .transition()
-        .duration(1000)
-        .call(yAxis) 
+    chart.select(".y.axis")
+    .transition()
+    .duration(1000)
+    .call(yAxis) 
 
-    // chart.selectAll("circle")
+   //change color
+    // chart.selectAll("rect")
     //      .exit()
     //      .remove();  
-  }
+}
 // ###########################################################
 // Chronogram
 
@@ -2135,7 +2154,7 @@ function updateData(){
     //     .scale(y)
     //     .orient('left')
     //     .tickSize(-width); //makes y grids
-        
+
 
     // main.append('g')
     //     .attr('transform','translate(0,0)')

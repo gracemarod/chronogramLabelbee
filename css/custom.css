@@ -4,6 +4,10 @@ canvas {
     border: 1px solid #d3d3d3;
 }
 
+#svgVisualize {
+  border: black solid 2px;
+}
+
 td {
     padding-right: 40px;
     vertical-align: top;
@@ -78,9 +82,11 @@ select{
 }
 
 .axis text
-{
+{ 
+    fill: black;
+    /*stroke: black;*/
     font-family: 'Arial';
-    font-size: 13px;
+    font-size: 15px;
 }
 
 .outer {
@@ -113,5 +119,5 @@ rect {
 
 .axis path, .axis line {
   fill: none;
-  stroke: #fff;
+  stroke: black;
 }

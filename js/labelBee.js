@@ -1775,6 +1775,7 @@ function printTracks() {
 var g_xRange = undefined,
     g_xZoom = undefined;
 
+
 function drawChrono() {
 
     var margin = {

@@ -26,7 +26,8 @@
   <script type="text/javascript" src="js/extern/fabric/dist/fabric.js"></script>
   <script type="text/javascript" src="js/extern/D3/d3.min.js"></script>
   
-  <script type="text/javascript" src="js/labelBee.js"></script>
+  <script type="text/javascript" src="./labelBee_copy.js"></script>
+  <!-- <script type="text/javascript" src="labelBee_copy.js"></script> -->
 </head>
 
 <body onload="init()">
@@ -91,13 +92,14 @@
                   <div class="btn btn-primary">
                   <label for="selectboxVideo" class="primary">Video </label>
                    <select id="selectboxVideo" name="video" onchange="selectVideo()" class="btn btn-primary">
-                <option value="data/testvideo.mp4" selected>testvideo.mp4</option>
+<!--                 <option value="data/testvideo.mp4" selected>testvideo.mp4</option>
                 <option value="data/36_01_H_160715100000.mp4">36_01_H_160715100000.mp4</option>
                 <option value="data/36_01_H_160715100000.webm">36_01_H_160715100000.webm</option>
                 <option value="data/36_01_H_160715100000.webm">36_01_H_160715100000_IPPP.mp4</option>
                 <option value="data/36_01_H_160715100000_IPPPP_1MB.mp4">36_01_H_160715100000_IPPPP_1MB.mp4</option>
                 <option value="data/36_01_H_160715100000_IPPPP_4MB.mp4">36_01_H_160715100000_IPPPP_4MB.mp4</option>
-                <option value="data/36_01_H_160715100000_copy.mp4">36_01_H_160715100000_copy.mp4</option>
+                <option value="data/36_01_H_160715100000_copy.mp4">36_01_H_160715100000_copy.mp4</option> -->
+                <option value="36_01_H_160715100000_IPPP.mp4">36_01_H_160715100000_IPPP.mp4</option>
             </select>
              </div>
           </p>
@@ -213,7 +215,7 @@
   </tr>
   </table>
   <br/><br/>
-  <svg id="svgVisualize" width="960" height="500"></svg>
+  <svg id="svgVisualize"></svg>
   </div>
 
   <script>
