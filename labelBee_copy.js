@@ -1785,29 +1785,17 @@ function chronoObservation() {
 var yScale, xScale, xAxis, yAxis;
 var svg, chart;
 
-var idSets = new Set();
-
-// var idSets = new Set();
-// valuesMap is going to save the beeID as keys and the counter of
-// the amount of times the beeID is in chronogramData as value.
-// singleCircles has all the id's that appear only once on the data.
-// pairRect has the id that appear more than once.
-var valuesMap = new Set(), singleCircles = {},
-pairRect = {};
-
-
-var coordsList = [];
-function createChronoData(){
-    // var Tracks = JSON.parse(data);
+//Aquire data from Tracks and create a more organized data structure
+//named chronogramData
+function createChronoData() {
     var chronoObs = new chronoObservation();
-    
-    chronogramData.length = 0
+
+    chronogramData.length = 0;
     for (F in Tracks) {
         for (id in Tracks[F]) {
             chronoObs = new chronoObservation();
             chronoObs.x = F;
             chronoObs.y = id;
-            //small rectangle for each event
             if (Tracks[F][id].bool_acts[0]) {
                 chronoObs.Activity = "fanning";
             } else if (Tracks[F][id].bool_acts[1]) {
@@ -1820,571 +1808,219 @@ function createChronoData(){
             chronogramData.push(chronoObs);
         }
     }
-    return chronogramData
-        // console.log("Data: ", chronogramData)
-    }
+    return chronogramData;
+}
 //temporary object for beeID's(y) and it's x values
-var  tempCoordinates = {}
+var tempCoordinates = {};
 //Final intervals and its BeeID
-allIntervals = []
+allIntervals = [];
 
 //For current interval
-var tempInterval ={
-    x1:0,
-    x2:0,
-    y:0
-}
+var tempInterval = {
+    x1: 0,
+    x2: 0,
+    y: 0
+};
 
-function createIntervalList(){
-    tempCoordinates = {}
+//Get data from chronogramData and output allIntervals,
+function createIntervalList() {
+    //initiliaze allIntervals to update data
+    tempCoordinates = {};
 
-    for (var i =0; i < chronogramData.length; i++){  
-      if(chronogramData[i].y in  tempCoordinates){  //Make sure y coordinate is not in tempCoordiantes
-          tempCoordinates[chronogramData[i].y].push(chronogramData[i].x);       
-    }else{          //Create new beeId key with it's x coordiantes as value
-    tempCoordinates[chronogramData[i].y] = []
-    tempCoordinates[chronogramData[i].y].push(chronogramData[i].x);
-    }
-    }
-
-allIntervals = []
-// var tempInterval ={
-//     x1:0,
-//     x2:0,
-//     y:0
-// }
-
-for (var key in tempCoordinates){
-
-    let xValues = tempCoordinates[key]
-    let tempInterval = {x1: xValues[0], x2: xValues[0],y : key }
-    
-
-    for (var i = 1; i < xValues.length; i++){ 
-        if(xValues[i] - xValues[i-1]==1) {     
-             tempInterval.x2 = xValues[i]    //Extend the existing interval
+    for (var i = 0; i < chronogramData.length; i++) {
+        if (chronogramData[i].y in tempCoordinates) {
+            //Make sure y coordinate is not in tempCoordiantes
+            tempCoordinates[chronogramData[i].y].push(chronogramData[i].x);
+        } else {
+            //Create new beeId key with it's x coordiantes as value
+            tempCoordinates[chronogramData[i].y] = [];
+            tempCoordinates[chronogramData[i].y].push(chronogramData[i].x);
         }
-        else {
-           allIntervals.push(tempInterval) 
-           tempInterval = {x1: xValues[i], x2: xValues[i],y : key }    // New interval
-        }  
     }
-    allIntervals.push(tempInterval)
-    // tempInterval = {x1: xValues[i], x2: xValues[i],y : key } 
-} 
-//allIntervals.push(tempInterval) 
+    //initiliaze allIntervals to update data
+    allIntervals = [];
+    for (var key in tempCoordinates) {
+        let xValues = tempCoordinates[key];
+        let tempInterval = { x1: xValues[0], x2: xValues[0], y: key };
 
-return allIntervals
+        for (var i = 1; i < xValues.length; i++) {
+            if (xValues[i] - xValues[i - 1] == 1) {
+                tempInterval.x2 = xValues[i]; //Extend the existing interval
+            } else {
+                allIntervals.push(tempInterval);
+                tempInterval = { x1: xValues[i], x2: xValues[i], y: key }; // New interval
+            }
+        }
+        allIntervals.push(tempInterval);
+    }
 
+    return allIntervals;
 }
 
-
-
-// var intervals = []
-// var tempInterval = {
-//     x1:0,
-//     x2:0,
-//     y:0
-// }
-
-// var sortedCoords ={
-//     y :0,
-//     x:[]
-// }
-                //Make scatter plot graph
-                function drawChrono() { 
-                    createChronoData();
-// console.log("Data 2: ", chronogramData)
-var w = 800,
-h = 500;
-var margin = {top: 30,
-    right: 40,
-    bottom:30,
-    left:40 },
-
-    width = w-margin.left -margin.right,
-    height= h - margin.top -margin.bottom;
-
+var allIds = [];
+//Make scatter plot graph
+function drawChrono() {
+    createChronoData();
+    // console.log("Data 2: ", chronogramData)
+    var w = 800, h = 500;
+    var margin = {
+        top: 30,
+        right: 40,
+        bottom: 30,
+        left: 40
+    },
+        width = w - margin.left - margin.right,
+        height = h - margin.top - margin.bottom;
 
     var padding = 30; //for chart edges
-    
+
     //Create scale functions
     xScale = d3.scale.linear()
-    .range([0, width])
-    .domain([0,
-        d3.max(chronogramData,
-            function(d) {
-                return Number(d.x);})
-        ]);
+               .range([0, width])
+               .domain([0, d3.max(chronogramData, function(d) {
+                        return Number(d.x);})
+                ]);
 
-     yScale = d3.scale.ordinal()
-     .domain(chronogramData,function(d){return Number(d.y)})
-     .rangeRoundBands([0, height - margin.top -margin.bottom],.1);
+    yScale = d3.scale.ordinal()
+               // .domain(chronogramData, function(d) {
+               //      return Number(d.y);})
+               .domain(allIds)
+               .rangeRoundBands([0, height - margin.top - margin.bottom], 0.1);
     //draw the x axis
-    xAxis = d3.svg.axis()
-    .scale(xScale)
-    .orient('bottom')
-    .ticks(5)
-    .tickSize(-height); 
+    xAxis = d3.svg
+        .axis()
+        .scale(xScale)
+        .orient("bottom")
+        .ticks(5)
+        .tickSize(-height);
 
-    //draw the y axis 
-    yAxis = d3.svg.axis()
-    .scale(yScale)
-    .orient('left')
-    .ticks(5)
-    .tickSize(-width);
-
+    //draw the y axis
+    yAxis = d3.svg
+        .axis()
+        .scale(yScale)
+        .orient("left")
+        .ticks(5)
+        .tickSize(-width);
 
     //Create svg element
-        //Create svg element
-        svg = d3.select('#svgVisualize')
+    svg = d3.select("#svgVisualize")
         // .attr("id", "chart")
-        .attr('width',w )
-        .attr('height', h);
+        .attr("width", w)
+        .attr("height", h);
 
-        chart = svg.append("g")
-        .classed("display",true)
-        .attr("transform","translate(" +margin.left + ","+margin.top +")");
+    chart = svg
+        .append("g")
+        .classed("display", true)
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     //add to X axis
-    chart.append('g')
-    .classed("x axis", true)
+    chart
+        .append("g")
+        .classed("x axis", true)
         // .attr('class', 'x axis')
         .attr("transform", "translate(" + 0 + "," + height + ")")
         .call(xAxis);
 
-
     //chart to Y axis
-    chart.append('g')
-    .attr('class', 'y axis')
-    .attr("transform", "translate(0,0)")
-    .call(yAxis);
-
+    chart
+        .append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(0,0)")
+        .call(yAxis);
 
     //add to X axis
-    chart.select(".x.axis")
-    .append("text")
-    .attr("x",0)
-    .attr("y",0)
-    .attr("transform", "translate(0,15)" )
-    .text("Frames");
+    chart
+        .select(".x.axis")
+        .append("text")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("transform", "translate(0,15)")
+        .text("Frames");
 
     //add to Y axis
-    chart.select(".y.axis")
-    .append("text")
-    .attr("x",0)
-    .attr("y",0)
-    .attr("transform", "translate(-5," + height +") rotate(-90)")
-    .text("Bee ID");
-
-
+    chart
+        .select(".y.axis")
+        .append("text")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("transform", "translate(-5," + height + ") rotate(-90)")
+        .text("Bee ID");
 }
-var circleList = [];
-var sortedCoordsList = [];
-function updateData(){
 
-    createChronoData();  
-    intervals = []
-    tempInterval = {
-        x1:0,
-        x2:0,
-        y:0
-    }
+function updateData() {
+    createChronoData();
 
     createIntervalList();
     //sorted by y coordinate
 
-      //Update scale domain
+    //Update scale domain
 
-      xScale.domain([0, d3.max(chronogramData, function(d) {
-        return Number(d.x) ;})])
+    xScale.domain([0,d3.max(chronogramData, function(d) {return Number(d.x);})]);
 
-      allIds = new Set()
-      for (let d of chronogramData) {
-        allIds.add(d.y)
-      }
+    allIds = new Set();
+    for (let d of chronogramData) {
+        allIds.add(d.y);
+    }
 
-      yScale.domain([...allIds].sort())
+    yScale.domain([...allIds].sort());
 
+    //Circles for solo bee iD
+    chart.selectAll("circle").data(allIntervals).enter().append("circle"); //Add circle chart
 
-
-//Circles for solo bee iD
-chart.selectAll("circle")
-.data(allIntervals)
-.enter()
-        .append("circle")  //Add circle chart
-        .attr("cx", function(d) {if(d.x1 == d.x2)
-            return xScale(Number(d.x1));})
-        .attr("cy", function(d) {if(d.x1 == d.x2){
-            return yScale(Number(d.y))+yScale.rangeBand()/2};})
-        .attr("r",5);
-
-      //Update circles
-      chart.selectAll("circle")
-      .attr("cx",function(d) {if(d.x1 == d.x2){return xScale(Number(d.x1))};})
-      .attr("cy",function(d) {if(d.x1 == d.x2){
-        return yScale(Number(d.y))+yScale.rangeBand()/2};})
-      .style("stroke", "black")
-           .attr("fill", "black")   //change color
-           .attr("r",5)   //shange radius
-           .style("fill", function(d) {
+    //Update circles
+    chart
+        .selectAll("circle")
+        .attr("cx", function(d) {
+            if (d.x1 == d.x2) {
+                return xScale(Number(d.x1));
+            }
+        })
+        .attr("cy", function(d) {
+            if (d.x1 == d.x2) {
+                return yScale(Number(d.y)) + yScale.rangeBand() / 2;
+            }
+        })
+        .attr("r", 5) //shange radius
+        .style("stroke", "black")
+        .attr("fill", "black") //change color
+        .style("fill", function(d) {
             var color = "black";
-            if (d.Activity == "fanning")
-                color = "#99CCFF";
-            else if (d.Activity == "pollenating")
-                color = "#FFFF00";
-            else if (d.Activity == "entering")
-                color = "#CC00FF";
-            else if (d.Activity == "exiting")
-                color = "#00CC99";
+            if (d.Activity == "fanning") color = "#99CCFF";
+            else if (d.Activity == "pollenating") color = "#FFFF00";
+            else if (d.Activity == "entering") color = "#CC00FF";
+            else if (d.Activity == "exiting") color = "#00CC99";
             return color;
         });
 
     //Display intervals within the same Bee ID
-    chart.selectAll("rect")
-        .data(allIntervals)
-        .enter()
-        .insert("rect");  
- 
+    chart.selectAll("rect").data(allIntervals).enter().insert("rect");
+
     //Update rect
-    chart.selectAll("rect")
-        .attr("x",function(d) {
-            if(d.x1 != d.x2)
-                return xScale(Number(d.x1));})
-        .attr("y",function(d) {
-            if(d.x1 != d.x2)
-                return yScale(Number(d.y));})
-        .attr("height", function(d){
-            if(d.x1 != d.x2)
-                return yScale.rangeBand()})
-        .attr("width",function(d){
-            if(d.x1 != d.x2)
-                return xScale(Number(d.x2)) - xScale(d.x1)  } )
+    chart
+        .selectAll("rect")
+        .attr("x", function(d) {
+            if (d.x1 != d.x2) return xScale(Number(d.x1));
+        })
+        .attr("y", function(d) {
+            if (d.x1 != d.x2) return yScale(Number(d.y));
+        })
+        .attr("height", function(d) {
+            if (d.x1 != d.x2) return yScale.rangeBand();
+        })
+        .attr("width", function(d) {
+            if (d.x1 != d.x2) return xScale(Number(d.x2)) - xScale(d.x1);
+        })
         .style("stroke", "black")
         .attr("fill", "black");
 
-
     //Update X axis
-    chart.select(".x.axis")
-    .transition()
-    .duration(1000)
-    .call(xAxis)
+    chart.select(".x.axis").transition().duration(1000).call(xAxis);
 
     //Update y axis
-    chart.select(".y.axis")
-    .transition()
-    .duration(1000)
-    .call(yAxis) 
+    chart.select(".y.axis").transition().duration(1000).call(yAxis);
 
-   //change color
+    //change color
     // chart.selectAll("rect")
     //      .exit()
-    //      .remove();  
+    //      .remove();
 }
-// ###########################################################
-// Chronogram
-
-// var g_xRange = undefined,
-//     g_xZoom = undefined;
-
-
-// function drawChrono() {
-
-
-// ******************* Start of Old Code ***********************************************
-    // var margin = {top: 20,right:20,bottom:30,left:40 },
-    //     width = 860-margin.left -margin.right,
-    //     height= 500 - margin.top -margin.bottom;
-
-    // var x = d3.scale.linear()
-    //     .range([0, width])
-    //     .domain([d3.min(chronogramData,
-    //             function(d) {
-    //                 return Number(d.x) - 0.5;
-    //             }),
-    //         d3.max(chronogramData,
-    //             function(d) {
-    //                 return Number(d.x) + 0.5;                      })
-    //     ]);
-
-    // var y = d3.scale.linear()
-    //     .range([0, height])
-    //     .domain([d3.min(chronogramData,
-    //             function(d) {
-    //                 return Number(d.y) - 0.5;
-    //             }),
-    //         d3.max(chronogramData,
-    //             function(d) {
-    //                 return Number(d.y) + 0.5;
-    //             })
-    //     ]);
-
-    // var graph = d3.select('#svgVisualize')
-    //     .append('svg:svg')
-    //     .attr('width',width + margin.right + margin.left)
-    //     .attr('height', height + margin.top + margin.bottom)
-    //     .attr('class','chart')
-
-    // var main = graph.append('g')
-    //     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-    //     .attr('width', width)
-    //     .attr('height',height)
-    //     .attr('class', 'main')
-
-    // //draw the x axis
-    // var xAxis = d3.svg.axis()
-    //     .scale(x)
-    //     .orient('bottom')
-    //     .tickSize(-height);     //makes x grids
-
-
-    // main.append('g')
-    //     .attr('transform', 'translate(0,' +height + ')')
-    //     .attr('class', 'main axis date')
-    //     .call(xAxis)
-    //     .append("text")
-    //     .attr("class","label")
-    //     .attr("x",width)
-    //     .attr("y", -6)
-    //     .style("text-anchor","end")
-    //     .text("Frames")
-
-    // //draw the y axis 
-    // var yAxis = d3.svg.axis()
-    //     .scale(y)
-    //     .orient('left')
-    //     .tickSize(-width); //makes y grids
-
-
-    // main.append('g')
-    //     .attr('transform','translate(0,0)')
-    //     .attr('class', 'main axis date')
-    //     .call(yAxis)
-    //     .append("text")
-    //     .attr("class", "label")
-    //     .attr("transform","rotate(-90)")
-    //     .attr("y",6)
-    //     .attr("dy", ".71em")
-    //     .style("text-anchor", "end")
-    //     .text("Bee ID");
-
-    // var g = main.append("svg:g")
-    // g.selectAll("scatter-dots")
-    //     .data(chronogramData)
-    //     .enter().append("svg:circle")
-    //         .attr("r",5)
-    //         .attr("cx", function(d) { return x(Number(d.x));})
-    //         .attr("cy", function(d) { return y(Number(d.y));})
-
-
-// Make rectangle
-    // var margin = {
-    //         top: 20,
-    //         right: 20,
-    //         bottom: 30,
-    //         left: 40
-    //     },
-    //     width = 960 - margin.left - margin.right,
-    //     height = 300 - margin.top - margin.bottom;
-
-    // var x = d3.scale.linear()
-    //     .range([0, width])
-    //     .domain([d3.min(chronogramData,
-    //             function(d) {
-    //                 return Number(d.x) - 0.5;
-    //             }),
-    //         d3.max(chronogramData,
-    //             function(d) {
-    //                 return Number(d.x) + 0.5;
-    //             })
-    //     ]);
-
-    // var y = d3.scale.linear()
-    //     .range([0, height])
-    //     .domain([d3.min(chronogramData,
-    //             function(d) {
-    //                 return Number(d.y) - 0.5;
-    //             }),
-    //         d3.max(chronogramData,
-    //             function(d) {
-    //                 return Number(d.y) + 0.5;
-    //             })
-    //     ]);
-
-    // xAxis = d3.svg.axis()
-    //     .scale(x)
-    //     .orient("bottom")
-    //     .tickSize(-height);
-
-    // yAxis = d3.svg.axis()
-    //     .scale(y)
-    //     .orient("left")
-    //     .ticks(5)
-    //     .tickSize(-width);
-
-    // var zoom = d3.behavior.zoom()
-    //     .x(x)
-    //     /*.y(y)*/
-    //     .scaleExtent([1, 32])
-    //     .on("zoom", zoomed);
-
-    // if (g_xRange !== undefined) {
-    //     zoom.scale(g_xZoom.scale())
-    //     x.domain(g_x.domain());
-    // }
-
-    // vis = d3.select("#svgVisualize")
-    //     .attr("width", width + margin.left + margin.right)
-    //     .attr("height", height + margin.top + margin.bottom)
-    //     .append("g")
-    //     .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-    //     .call(zoom);
-
-    // vis.append("rect")
-    //     .attr("width", width)
-    //     .attr("height", height)
-    //     .style("fill", "#f0f0ff")
-    //     .style("stroke", "gray")
-
-    // vis.append("g")
-    //     .attr("class", "x axis")
-    //     .attr("transform", "translate(0," + height + ")")
-    //     .call(xAxis);
-
-    // vis.append("g")
-    //     .attr("class", "y axis")
-    //     .call(yAxis);
-
-    // // Add the text label for the x axis
-    // vis.append("text")
-    //     .attr("transform", "translate(" + 70 + " ," + -10 + ")")
-    //     .style("text-anchor", "middle")
-    //     .text("Frame");
-
-
-    // // Add the text label for the Y axis
-    // vis.append("text")
-    //     .attr("transform", "rotate(-90)")
-    //     .attr("y", -40)
-    //     .attr("x", -220)
-    //     .attr("dy", "1em")
-    //     .style("text-anchor", "middle")
-    //     .text("Bee ID");
-
-    // var chronArea = vis.append("g");
-
-    // var timeMark = chronArea.append("rect")
-    //     .attr("x", function(d) {
-    //         return x(Number(getCurrentFrame()) - 0.05);
-    //     })
-    //     .attr("y", function(d) {
-    //         return y(-0.5);
-    //     })
-    //     .attr("height", function(d) {
-    //         return (y(Number(y.range()[1]) + 0.5) - y(-0.5));
-    //     })
-    //     .attr("width", function(d) {
-    //         return (x(0.1) - x(0.0));
-    //     })
-    //     .style("fill", "#ff0000")
-
-    // circles = chronArea.append("g").selectAll("rect").data(chronogramData);
-
-    // circles
-    //     .enter()
-    //     .insert("rect")
-    //     .attr("x", function(d) {
-    //         return x(Number(d.x) - 0.5);
-    //     })
-    //     .attr("y", function(d) {
-    //         return y(Number(d.y) - 0.4);
-    //     })
-    //     .attr("height", function(d) {
-    //         return (y(Number(d.y) + 0.4) - y(Number(d.y) - 0.4));
-    //     })
-    //     .attr("width", function(d) {
-    //         return (x(Number(d.x) + 1) - x(d.x));
-    //     })
-    //     .style("fill", function(d) {
-    //         var color = "black";
-    //         if (d.Activity == "fanning")
-    //             color = "#99CCFF";
-    //         else if (d.Activity == "entering")
-    //             color = "#FFFF00";
-    //         else if (d.Activity == "exiting")
-    //             color = "#CC00FF";
-    //         else if (d.Activity == "pollenating")
-    //             color = "#00CC99";
-    //         return color;
-    //     })
-    //     .style("stroke", "black");
-
-    // function zoomed() { //Function inside function
-    //     g_xRange = x;
-    //     g_xZoom = zoom;
-
-    //     vis.select(".x.axis").call(xAxis);
-    //     vis.select(".y.axis").call(yAxis);
-
-    //     timeMark
-    //         .attr("x", function(d) {
-    //             return x(Number(getCurrentFrame()) - 0.05);
-    //         })
-    //         .attr("y", function(d) {
-    //             return y(-0.5);
-    //         })
-    //         .attr("height", function(d) {
-    //             return (y(Number(y.range()[1]) + 0.5) - y(-0.5));
-    //         })
-    //         .attr("width", function(d) {
-    //             return (x(0.1) - x(0.0));
-    //         })
-
-    //     circles
-    //         .attr("x", function(d) {
-    //             return x(Number(d.x) - 0.5);
-    //         })
-    //         .attr("y", function(d) {
-    //             return y(Number(d.y) - 0.4);
-    //         })
-    //         .attr("height", function(d) {
-    //             return (y(Number(d.y) + 0.4) - y(Number(d.y) - 0.4));
-    //         })
-    //         .attr("width", function(d) {
-    //             return (x(Number(d.x) + 1) - x(d.x));
-    //         })
-    // }
-// }
-
-// function refreshChronogram() {
-
-//     //Deleting everything on the svg so we can recreate the updated chart
-//     d3.selectAll("svg > *").remove();
-//     //Emptying the array so we won't have duplicates
-//     for (var i = 0; i < chronogramData.length; i++)
-//         chronogramData.pop();
-//     for (F in Tracks) {
-//         for (id in Tracks[F]) {
-//             chronoObs.x = F;
-//             chronoObs.y = id;
-//             // console.log("Bool Acts: ", bool_acts)
-//             if (Tracks[F][id].bool_acts[0]) {
-//                 chronoObs.Activity = "fanning";
-//             } else if (Tracks[F][id].bool_acts[1]) {
-//                 chronoObs.Activity = "pollenating";
-//             } else if (Tracks[F][id].bool_acts[2]) {
-//                 chronoObs.Activity = "entering";
-//             } else if (Tracks[F][id].bool_acts[3]) {
-//                 chronoObs.Activity = "exiting";
-//             }
-
-//             chronogramData.push(chronoObs);
-
-//             chronoObs = new chronoObservation();
-//         }
-//     }
-
-//     d3.selectAll("svg > *").remove();
-//     drawChrono();
-// *************************End of Old Code ******************************************
- // }
